@@ -85,29 +85,27 @@ static_assert(overlapping_factor_range(95, 115) == std::pair{11, 99});
 static_assert(overlapping_factor_range(998, 1012) == std::pair{1010ul, 9999ul});
 static_assert(overlapping_factor_range(1188511880, 1188511890) == std::pair{1000010000, 9999999999});
 
-constexpr int overlap(unsigned long ceil_a, unsigned long floor_b, unsigned long min, unsigned long max) {
+constexpr unsigned long long
+overlap(unsigned long ceil_a, unsigned long floor_b, unsigned long min, unsigned long max, unsigned long rep) {
 	auto overlap_min = std::max(ceil_a, min);
 	auto overlap_max = std::min(floor_b, max);
 
-	// printf("overlap([%ld, %ld] [%ld, %ld]) = [%ld,%ld]\n", ceil_a, floor_b, min, max, overlap_min, overlap_max);
-
 	// return sum of numbers from [o_min, o_max)
-	auto sum = 0;
+	unsigned long sum = 0;
 	for (auto x = overlap_min; x <= overlap_max; x++) {
-		sum += x;
+		sum += x * rep;
 	}
 	return sum;
 }
 
-static_assert(overlap(9, 10, 1, 9) == 9); // 9
-static_assert(overlap(1, 2, 1, 9) == 3);  // 1+2
+static_assert(overlap(9, 10, 1, 9, 11) == 99);
+static_assert(overlap(1, 2, 1, 9, 11) == 33);
 
-constexpr unsigned long sum_repeatnums(unsigned long a, unsigned long b) {
-	//11, 22 => 1
-	//998, 115 = > 2
+constexpr unsigned long long sum_repeatnums(unsigned long long a, unsigned long long b) {
 	auto idx = overlapping_range(a, b);
-	if (idx <= 0)
+	if (idx <= 0) {
 		return 0;
+	}
 
 	auto [min, max] = factors(idx);
 	auto rep = repeater(idx);
@@ -115,25 +113,22 @@ constexpr unsigned long sum_repeatnums(unsigned long a, unsigned long b) {
 	unsigned long ceil_a = std::ceil(double(a) / div);
 	unsigned long floor_b = std::floor(double(b) / div);
 
-	printf("%ld,%ld => overlaps with [%ld, %ld] * %ld (%d)\n", a, b, min, max, repeater(idx), idx);
-	auto sum = overlap(ceil_a, floor_b, min, max);
-	printf("=> %lu\n", sum * rep);
-	printf("\n");
-	return sum * rep;
+	auto sum = overlap(ceil_a, floor_b, min, max, rep);
+	return sum;
 }
 
 int main() {
 	// Sample data:
-	// int cnt = 0;
-	// for (auto [a, b] : sample_data) {
-	// 	cnt += sum_repeatnums(a, b);
-	// }
-	// std::cout << cnt << "\n";
+	unsigned long long cnt = 0;
+	for (auto [a, b] : sample_data) {
+		cnt += sum_repeatnums(a, b);
+	}
+	std::cout << "Sample: " << cnt << "\n";
 
-	unsigned long cnt = 0;
+	cnt = 0;
 	for (auto [a, b] : data) {
 		cnt += sum_repeatnums(a, b);
 	}
-	//3203842663 is too low
-	std::cout << cnt << "\n";
+
+	std::cout << "Part 1: " << cnt << "\n";
 }
