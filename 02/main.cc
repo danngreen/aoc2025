@@ -107,7 +107,6 @@ append_overlap(unsigned long ceil_a, unsigned long floor_b, unsigned long min, u
 	for (auto x = o_min; x <= o_max; x++) {
 		auto id = x * rep;
 		ids.insert(id);
-		printf("%lu\n", x * rep);
 	}
 }
 
@@ -116,7 +115,6 @@ constexpr void process(unsigned long long a, unsigned long long b, auto forms) {
 	auto digs_a = num_digits(a);
 	auto digs_b = num_digits(b);
 
-	printf("[%llu,%llu]: digs:%d-%d\n", a, b, digs_a, digs_b);
 	for (auto f : forms) {
 		if (f.resulting_digits == digs_a || f.resulting_digits == digs_b) {
 			auto min = pow10(f.factor_digits - 1);
@@ -125,8 +123,6 @@ constexpr void process(unsigned long long a, unsigned long long b, auto forms) {
 
 			unsigned long ceil_a = std::ceil(double(a) / div);
 			unsigned long floor_b = std::floor(double(b) / div);
-
-			printf("Check with base %llu: [%lu, %lu] overlaps? with [%lu, %lu]\n", f.base, ceil_a, floor_b, min, max);
 
 			append_overlap(ceil_a, floor_b, min, max, f.base);
 		}
@@ -137,36 +133,32 @@ int main() {
 	unsigned long long cnt = 0;
 
 	// Sample data:
-	// for (auto [a, b] : sample_data) {
-	// 	process(a, b, forms_p1);
-	// }
-	// cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
-	// std::cout << "Sample Part 1: " << cnt << "\n";
+	for (auto [a, b] : sample_data) {
+		process(a, b, forms_p1);
+	}
+	cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
+	std::cout << "Sample Part 1: " << cnt << "\n";
 
 	ids.clear();
 	for (auto [a, b] : data) {
 		process(a, b, forms_p1);
 	}
-	cnt = 0;
-	for (auto s : ids) {
-		cnt += s;
-		printf("%llu => %llu\n", s, cnt);
-	}
 	cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
 	std::cout << "Part 1: " << cnt << "\n";
 
 	// Sample data:
-	// ids.clear();
-	// for (auto [a, b] : sample_data) {
-	// 	process(a, b, forms_p2);
-	// }
-	// cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
-	// std::cout << "Sample Part 2: " << cnt << "\n";
+	ids.clear();
+	for (auto [a, b] : sample_data) {
+		process(a, b, forms_p2);
+	}
+	cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
+	std::cout << "Sample Part 2: " << cnt << "\n";
 
-	// ids.clear();
-	// for (auto [a, b] : data) {
-	// 	process(a, b, forms_p2);
-	// }
-	// cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
-	// std::cout << "Part 2: " << cnt << "\n";
+	ids.clear();
+	for (auto [a, b] : data) {
+		process(a, b, forms_p2);
+	}
+
+	cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
+	std::cout << "Part 2: " << cnt << "\n";
 }
