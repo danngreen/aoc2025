@@ -4,6 +4,32 @@
 #include <iostream>
 #include <numeric>
 
+struct Form {
+	int num_digits;		//2 => 10-99, 3 => 100-999, etc
+	unsigned long long base; //11, 101, 1001, 10101, etc
+};
+
+// All formulas to make a repeating digit number with max 10 digits
+constexpr std::array<Form, 17> forms{{
+	{1, 11},
+	{1, 111},
+	{1, 1111},
+	{1, 11111},
+	{1, 111111},
+	{1, 1111111},
+	{1, 11111111},
+	{1, 111111111},
+	{1, 1111111111},
+	{2, 101},
+	{2, 10101},
+	{2, 1010101},
+	{2, 101010101},
+	{3, 1001},
+	{3, 1001001},
+	{4, 10001},
+	{5, 100001},
+}};
+
 constexpr unsigned long pow10(unsigned x) {
 	int r = 1;
 	while (x--) {
@@ -27,23 +53,14 @@ constexpr std::pair<unsigned long, unsigned long> factors(int idx) {
 	return {pow10(idx - 1), pow10(idx) - 1};
 }
 
-constexpr std::pair<unsigned long, unsigned long> factor_range(int idx) {
-	auto [l, h] = factors(idx);
-	auto r = repeater(idx);
-	return {l * r, h * r};
-}
-
 static_assert(repeater(1) == 11);
 static_assert(factors(1) == std::pair{1, 9});
-static_assert(factor_range(1) == std::pair{11, 99});
 
 static_assert(repeater(2) == 101);
 static_assert(factors(2) == std::pair{10, 99});
-static_assert(factor_range(2) == std::pair{1010, 9999});
 
 static_assert(repeater(3) == 1001);
 static_assert(factors(3) == std::pair{100, 999});
-static_assert(factor_range(3) == std::pair{100100, 999999});
 
 constexpr int overlapping_range(unsigned long a, unsigned long b) {
 	int idx = 1;
@@ -64,26 +81,6 @@ static_assert(overlapping_range(11, 22) == 1);
 static_assert(overlapping_range(95, 115) == 1);
 static_assert(overlapping_range(998, 1012) == 2);
 static_assert(overlapping_range(1188511880, 1188511890) == 5);
-
-constexpr std::pair<unsigned long, unsigned long> overlapping_factor_range(unsigned long a, unsigned long b) {
-	int idx = 1;
-	while (idx < 15) {
-		auto [l, h] = factors(idx);
-		auto r = repeater(idx);
-		unsigned long min = l * r;
-		unsigned long max = h * r;
-		if ((a >= min && a <= max) || (b >= min && b <= max)) {
-			return {min, max};
-		}
-		idx++;
-	}
-	return {0, 0};
-}
-
-static_assert(overlapping_factor_range(11, 22) == std::pair{11, 99});
-static_assert(overlapping_factor_range(95, 115) == std::pair{11, 99});
-static_assert(overlapping_factor_range(998, 1012) == std::pair{1010ul, 9999ul});
-static_assert(overlapping_factor_range(1188511880, 1188511890) == std::pair{1000010000, 9999999999});
 
 constexpr unsigned long long
 overlap(unsigned long ceil_a, unsigned long floor_b, unsigned long min, unsigned long max, unsigned long rep) {
