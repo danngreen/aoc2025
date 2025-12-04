@@ -111,13 +111,13 @@ append_overlap(unsigned long ceil_a, unsigned long floor_b, unsigned long min, u
 	}
 }
 
-constexpr void process(unsigned long long a, unsigned long long b) {
+constexpr void process(unsigned long long a, unsigned long long b, auto forms) {
 
 	auto digs_a = num_digits(a);
 	auto digs_b = num_digits(b);
 
 	printf("[%llu,%llu]: digs:%d-%d\n", a, b, digs_a, digs_b);
-	for (auto f : forms_p1) {
+	for (auto f : forms) {
 		if (f.resulting_digits == digs_a || f.resulting_digits == digs_b) {
 			auto min = pow10(f.factor_digits - 1);
 			auto max = pow10(f.factor_digits) - 1;
@@ -134,17 +134,39 @@ constexpr void process(unsigned long long a, unsigned long long b) {
 }
 
 int main() {
+	unsigned long long cnt = 0;
+
 	// Sample data:
 	// for (auto [a, b] : sample_data) {
-	// 	process(a, b);
+	// 	process(a, b, forms_p1);
 	// }
-	// unsigned long long cnt0 = std::accumulate(ids.begin(), ids.end(), 0);
-	// std::cout << "Sample: " << cnt0 << "\n";
+	// cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
+	// std::cout << "Sample Part 1: " << cnt << "\n";
 
 	ids.clear();
 	for (auto [a, b] : data) {
-		process(a, b);
+		process(a, b, forms_p1);
 	}
-	unsigned long long cnt = std::accumulate(ids.begin(), ids.end(), 0);
+	cnt = 0;
+	for (auto s : ids) {
+		cnt += s;
+		printf("%llu => %llu\n", s, cnt);
+	}
+	cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
 	std::cout << "Part 1: " << cnt << "\n";
+
+	// Sample data:
+	// ids.clear();
+	// for (auto [a, b] : sample_data) {
+	// 	process(a, b, forms_p2);
+	// }
+	// cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
+	// std::cout << "Sample Part 2: " << cnt << "\n";
+
+	// ids.clear();
+	// for (auto [a, b] : data) {
+	// 	process(a, b, forms_p2);
+	// }
+	// cnt = std::accumulate(ids.begin(), ids.end(), 0ull);
+	// std::cout << "Part 2: " << cnt << "\n";
 }
