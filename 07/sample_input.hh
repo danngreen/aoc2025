@@ -1,9 +1,7 @@
+#include <array>
 #include <string_view>
 
-// constexpr std::string_view sample_data[] = {
-
-#include <string>
-std::string sample_data[] = {
+constexpr std::string_view sample_data[] = {
 	".......S.......",
 	"...............",
 	".......^.......",
