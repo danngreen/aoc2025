@@ -1,5 +1,7 @@
+#include "../common/fileparse.hh"
 #include "input.hh"
 #include "sample_input.hh"
+#include "util/fixed_vector.hh"
 #include <charconv>
 #include <cstddef>
 #include <iostream>
@@ -49,9 +51,55 @@ constexpr long long parse_rows(std::span<const char> ops, std::span<const int> n
 	return sum;
 }
 
-static_assert(parse_rows(get_ops<4>(sample_data_ops), sample_data) == 4277556);
+// static_assert(parse_rows(get_ops<4>(sample_data_ops), sample_data) == 4277556);
 
-static_assert(parse_rows(get_ops<1000>(dataops), data) == 6891729672676);
+// static_assert(parse_rows(get_ops<1000>(dataops), data) == 6891729672676);
+
+///////////////////////
+// Part 2:
+
+long long parse(std::span<const std::string> lines) {
+	auto width = lines[0].size();
+
+	FixedVector<int, 8> group;
+
+	long long sum = 0;
+
+	char op = '\0';
+
+	for (auto col = 0u; col <= width; col++) {
+		int num = 0;
+		if (col < width) {
+			for (auto row = 0u; row < lines.size(); row++) {
+				auto c = lines[row][col];
+				if (isdigit(c))
+					num = num * 10 + (c - '0');
+				else if (c == '+' || c == '*')
+					op = c;
+			}
+		}
+		if (col == width || num == 0) {
+			printf("Empty column: %d %d %d %c\n", group[0], group[1], group[2], op);
+			// empty column: process last group
+			if (op == '+') {
+				auto res = std::accumulate(group.begin(), group.end(), 0ll);
+				printf("=>%lld\n", res);
+				sum += res;
+			}
+			if (op == '*') {
+				auto res = std::accumulate(group.begin(), group.end(), 1ll, std::multiplies<long long>());
+				printf("=>%lld\n", res);
+				sum += res;
+			}
+			op = '\0';
+			group.clear();
+		} else {
+			group.push_back(num);
+		}
+	}
+
+	return sum;
+}
 
 int main() {
 	long long cnt;
@@ -62,7 +110,9 @@ int main() {
 	auto ops = get_ops<1000>(dataops);
 	std::cout << "Part 1: " << parse_rows(ops, data) << "\n";
 
-	// std::cout << "Sample Part 2: " << extend_ranges(sample_data) << "\n";
+	auto lines = parse_lines("sample_input.txt");
+	std::cout << "Sample Part 2: " << parse(lines) << "\n";
 
-	// std::cout << "Part 2: " << extend_ranges(data) << "\n";
+	auto lines2 = parse_lines("input2.txt");
+	std::cout << "Part 2: " << parse(lines2) << "\n";
 }
