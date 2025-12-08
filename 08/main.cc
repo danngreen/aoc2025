@@ -1,9 +1,10 @@
 #include "input.hh"
 #include "sample_input.hh"
+#include <algorithm>
 #include <cstddef>
 #include <iostream>
-#include <set>
 #include <span>
+#include <unordered_set>
 #include <vector>
 
 // squared distance, no need to waste cycles on sqrt()
@@ -38,9 +39,9 @@ Matrix<N> create_matrix(std::array<Pos, N> const &pos) {
 
 // N: number of lights
 // M: number of strings to connect
-template<size_t N, size_t M>
-std::array<std::pair<int, int>, M> find_shortest(Matrix<N> &matrix) {
-	std::array<std::pair<int, int>, M> pairs;
+template<size_t N>
+std::array<std::pair<int, int>, N> find_shortest(Matrix<N> &matrix) {
+	std::array<std::pair<int, int>, N> pairs;
 	int pair_i = 0;
 
 	for (int i = 0; i < N; i++) {
@@ -58,16 +59,26 @@ std::array<std::pair<int, int>, M> find_shortest(Matrix<N> &matrix) {
 // template<size_t N>
 // std::array<std::array<int, N>, N> calculate
 
-std::vector<std::set<int>> find_circuits(std::span<std::pair<int, int>> pairs) {
-	std::vector<std::set<int>> cirs;
+std::vector<std::unordered_set<int>> create_n_circuits(int num_pairs, std::span<std::pair<int, int>> pairs) {
+	std::vector<std::unordered_set<int>> cirs;
+
+	printf("%zu pairs\n", pairs.size());
 	for (auto p : pairs) {
+		printf("[%d][%d]\n", p.first, p.second);
 		bool found = false;
 
 		for (auto &cir : cirs) {
+			if (cir.contains(p.first) && cir.contains(p.second)) {
+				found = true;
+				break;
+			}
+
 			if (cir.contains(p.first) || cir.contains(p.second)) {
 				cir.insert(p.first);
 				cir.insert(p.second);
+				num_pairs--;
 				found = true;
+				break;
 			}
 		}
 
@@ -75,18 +86,47 @@ std::vector<std::set<int>> find_circuits(std::span<std::pair<int, int>> pairs) {
 			auto &newcir = cirs.emplace_back();
 			newcir.insert(p.first);
 			newcir.insert(p.second);
+			num_pairs--;
 		}
+
+		if (num_pairs < 0)
+			break;
 	}
 	return cirs;
+}
+
+template<size_t N>
+std::array<int, N> calc_circuit_sizes(auto const &cirs) {
+	std::array<int, N> szs{};
+
+	int sz_i = 0;
+	for (auto &cir : cirs) {
+		szs[sz_i++] = cir.size();
+	}
+
+	return szs;
 }
 
 int main() {
 	{
 		auto matrix = create_matrix(sample_data);
-		auto pairs = find_shortest<20, 10>(matrix);
+		auto pairs = find_shortest<20>(matrix);
 
-		auto cirs = find_circuits(pairs);
-		// TODO: use pairs to find 3 largest groups
+		auto cirs = create_n_circuits(10, pairs);
+		auto szs = calc_circuit_sizes<20>(cirs);
+		std::sort(szs.begin(), szs.end(), std::greater<int>());
+		std::cout << "Sample part 1: " << szs[0] * szs[1] * szs[2] << "\n";
+	}
+
+	{
+		auto matrix = create_matrix(data);
+		auto pairs = find_shortest<1000>(matrix);
+
+		auto cirs = create_n_circuits(1000, pairs);
+		auto szs = calc_circuit_sizes<1000>(cirs);
+		std::sort(szs.begin(), szs.end(), std::greater<int>());
+		std::cout << "Part 1: " << szs[0] << " " << szs[1] << " " << szs[2] << "\n"; //2028 too low
+		std::cout << "Part 1: " << szs[0] * szs[1] * szs[2] << "\n";				 //2028 too low
 		for (auto cir : cirs) {
 			printf("%zu: ", cir.size());
 			for (auto c : cir) {
@@ -95,9 +135,4 @@ int main() {
 			printf("\n");
 		}
 	}
-
-	// {
-	// 	auto matrix = create_matrix(data);
-	// 	auto pairs = find_shortest<1000, 1000>(matrix);
-	// }
 }
