@@ -2,10 +2,9 @@
 #include "sample_input.hh"
 #include <cstddef>
 #include <iostream>
+#include <set>
 #include <span>
-// #include "util/zip.hh"
-// #include <numeric>
-// #include <vector>
+#include <vector>
 
 // squared distance, no need to waste cycles on sqrt()
 constexpr long distsq(Pos a, Pos b) {
@@ -37,6 +36,8 @@ Matrix<N> create_matrix(std::array<Pos, N> const &pos) {
 	return matrix;
 }
 
+// N: number of lights
+// M: number of strings to connect
 template<size_t N, size_t M>
 std::array<std::pair<int, int>, M> find_shortest(Matrix<N> &matrix) {
 	std::array<std::pair<int, int>, M> pairs;
@@ -54,15 +55,49 @@ std::array<std::pair<int, int>, M> find_shortest(Matrix<N> &matrix) {
 	return pairs;
 }
 
+// template<size_t N>
+// std::array<std::array<int, N>, N> calculate
+
+std::vector<std::set<int>> find_circuits(std::span<std::pair<int, int>> pairs) {
+	std::vector<std::set<int>> cirs;
+	for (auto p : pairs) {
+		bool found = false;
+
+		for (auto &cir : cirs) {
+			if (cir.contains(p.first) || cir.contains(p.second)) {
+				cir.insert(p.first);
+				cir.insert(p.second);
+				found = true;
+			}
+		}
+
+		if (!found) {
+			auto &newcir = cirs.emplace_back();
+			newcir.insert(p.first);
+			newcir.insert(p.second);
+		}
+	}
+	return cirs;
+}
+
 int main() {
 	{
 		auto matrix = create_matrix(sample_data);
 		auto pairs = find_shortest<20, 10>(matrix);
+
+		auto cirs = find_circuits(pairs);
 		// TODO: use pairs to find 3 largest groups
+		for (auto cir : cirs) {
+			printf("%zu: ", cir.size());
+			for (auto c : cir) {
+				printf("%d ", c);
+			}
+			printf("\n");
+		}
 	}
 
-	{
-		auto matrix = create_matrix(data);
-		auto pairs = find_shortest<1000, 1000>(matrix);
-	}
+	// {
+	// 	auto matrix = create_matrix(data);
+	// 	auto pairs = find_shortest<1000, 1000>(matrix);
+	// }
 }
