@@ -37,25 +37,32 @@ Matrix<N> create_matrix(std::array<Pos, N> const &pos) {
 	return matrix;
 }
 
-template<size_t N>
-void find_shortest(Matrix<N> &matrix) {
+template<size_t N, size_t M>
+std::array<std::pair<int, int>, M> find_shortest(Matrix<N> &matrix) {
+	std::array<std::pair<int, int>, M> pairs;
+	int pair_i = 0;
+
 	for (int i = 0; i < N; i++) {
 		auto closest = std::min_element(matrix.begin(), matrix.end());
 		auto dist = *closest;
 		auto p = std::distance(matrix.begin(), closest);
 		printf("[%ld] and [%ld]: %ld\n", p % N, p / N, dist);
+		pairs[pair_i++] = {p % N, p / N};
 		*closest = LONG_MAX;
 	}
+
+	return pairs;
 }
 
 int main() {
 	{
 		auto matrix = create_matrix(sample_data);
-		find_shortest<20>(matrix);
+		auto pairs = find_shortest<20, 10>(matrix);
+		// TODO: use pairs to find 3 largest groups
 	}
 
 	{
 		auto matrix = create_matrix(data);
-		find_shortest<1000>(matrix);
+		auto pairs = find_shortest<1000, 1000>(matrix);
 	}
 }
