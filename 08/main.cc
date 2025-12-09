@@ -16,83 +16,95 @@ constexpr long distsq(Pos a, Pos b) {
 }
 
 template<size_t N>
-using Matrix = std::array<long, N * N>;
+using DistanceMatrix = std::array<long, N * N>;
 // using Matrix = std::array<std::array<long, N>, N>;
 
 template<size_t N>
-Matrix<N> create_matrix(std::array<Pos, N> const &pos) {
-	Matrix<N> matrix;
+DistanceMatrix<N> create_matrix(std::array<Pos, N> const &pos) {
+	DistanceMatrix<N> distances;
 
 	for (auto x = 0u; auto a : pos) {
 		for (auto y = 0u; auto b : pos) {
+			long idx = x + N * y;
 			if (x < y) {
-				printf("[%d] %d %d %d -> [%d] %d %d %d = %ld\n", x, a.x, a.y, a.z, y, b.x, b.y, b.z, distsq(a, b));
-				matrix[x + N * y] = distsq(a, b);
+				printf("[%d] %d %d %d -> [%d] %d %d %d = [%ld] [%ld %ld] %ld\n",
+					   x,
+					   a.x,
+					   a.y,
+					   a.z,
+					   y,
+					   b.x,
+					   b.y,
+					   b.z,
+					   idx,
+					   idx % N,
+					   idx / N,
+					   distsq(a, b));
+				distances[idx] = distsq(a, b);
 			} else
-				matrix[x + N * y] = LONG_MAX;
+				distances[idx] = LONG_MAX;
 			y++;
 		}
 		x++;
 	}
-	return matrix;
+	return distances;
 }
 
-// N: number of lights
-// M: number of strings to connect
 template<size_t N>
-std::array<std::pair<int, int>, N> find_shortest(Matrix<N> &matrix) {
-	std::array<std::pair<int, int>, N> pairs;
-	int pair_i = 0;
+std::vector<std::set<int>> connect_n_wires(int n, DistanceMatrix<N> &distances) {
+	std::vector<std::set<int>> circuits;
 
-	for (int i = 0; i < N; i++) {
-		auto closest = std::min_element(matrix.begin(), matrix.end());
+	int wires = 0;
+
+	while (wires < n) {
+		auto closest = std::min_element(distances.begin(), distances.end());
 		auto dist = *closest;
-		auto p = std::distance(matrix.begin(), closest);
-		printf("[%ld] and [%ld]: %ld\n", p % N, p / N, dist);
-		pairs[pair_i++] = {p % N, p / N};
+		auto p = std::distance(distances.begin(), closest);
 		*closest = LONG_MAX;
-	}
+		printf("%d-th shortest wire: between [%ld] and [%ld] = distance %ld==>", wires, p % N, p / N, dist);
+		int b = p % N;
+		int a = p / N;
 
-	return pairs;
-}
-
-// template<size_t N>
-// std::array<std::array<int, N>, N> calculate
-
-std::vector<std::unordered_set<int>> create_n_circuits(int num_pairs, std::span<std::pair<int, int>> pairs) {
-	std::vector<std::unordered_set<int>> cirs;
-
-	printf("%zu pairs\n", pairs.size());
-	for (auto p : pairs) {
-		printf("[%d][%d]\n", p.first, p.second);
+		// Add or append it to the circuit
 		bool found = false;
-
-		for (auto &cir : cirs) {
-			if (cir.contains(p.first) && cir.contains(p.second)) {
+		for (auto &cir : circuits) {
+			if (cir.contains(a) && cir.contains(b)) {
 				found = true;
+				printf("Skip, already in ");
+				for (auto c : cir)
+					printf("%d ", c);
+				printf("\n");
+				//do not count this wire
 				break;
 			}
 
-			if (cir.contains(p.first) || cir.contains(p.second)) {
-				cir.insert(p.first);
-				cir.insert(p.second);
-				num_pairs--;
+			else if (cir.contains(a) || cir.contains(b))
+			{
+				cir.insert(a);
+				cir.insert(b);
+				printf("Appended: size=>%zu: ", cir.size());
+				for (auto c : cir)
+					printf("%d ", c);
+				printf("\n");
 				found = true;
+				wires++;
 				break;
 			}
 		}
 
 		if (!found) {
-			auto &newcir = cirs.emplace_back();
-			newcir.insert(p.first);
-			newcir.insert(p.second);
-			num_pairs--;
+			auto &newcir = circuits.emplace_back();
+			printf("New circuit (sz 2)\n");
+			newcir.insert(a);
+			newcir.insert(b);
+			wires++;
 		}
 
 		if (num_pairs < 0)
 			break;
 	}
-	return cirs;
+
+	return circuits;
 }
 
 template<size_t N>
@@ -110,29 +122,28 @@ std::array<int, N> calc_circuit_sizes(auto const &cirs) {
 int main() {
 	{
 		auto matrix = create_matrix(sample_data);
-		auto pairs = find_shortest<20>(matrix);
+		auto circuits = connect_n_wires<20>(10, matrix);
 
-		auto cirs = create_n_circuits(10, pairs);
-		auto szs = calc_circuit_sizes<20>(cirs);
-		std::sort(szs.begin(), szs.end(), std::greater<int>());
-		std::cout << "Sample part 1: " << szs[0] * szs[1] * szs[2] << "\n";
+		std::partial_sort(circuits.begin(), circuits.begin() + 3, circuits.end(), [](auto &a, auto &b) {
+			return a.size() > b.size();
+		});
+
+		std::cout << circuits[0].size() << "*" << circuits[1].size() << "*" << circuits[2].size() << "="
+				  << circuits[0].size() * circuits[1].size() * circuits[2].size() << "\n";
 	}
 
 	{
 		auto matrix = create_matrix(data);
-		auto pairs = find_shortest<1000>(matrix);
+		auto circuits = connect_n_wires<1000>(1000, matrix);
 
-		auto cirs = create_n_circuits(1000, pairs);
-		auto szs = calc_circuit_sizes<1000>(cirs);
-		std::sort(szs.begin(), szs.end(), std::greater<int>());
-		std::cout << "Part 1: " << szs[0] << " " << szs[1] << " " << szs[2] << "\n"; //2028 too low
-		std::cout << "Part 1: " << szs[0] * szs[1] * szs[2] << "\n";				 //2028 too low
-		for (auto cir : cirs) {
-			printf("%zu: ", cir.size());
-			for (auto c : cir) {
-				printf("%d ", c);
-			}
-			printf("\n");
-		}
+		std::partial_sort(circuits.begin(), circuits.begin() + 3, circuits.end(), [](auto &a, auto &b) {
+			return a.size() > b.size();
+		});
+
+		std::cout << circuits[0].size() << "*" << circuits[1].size() << "*" << circuits[2].size() << "="
+				  << circuits[0].size() * circuits[1].size() * circuits[2].size() << "\n";
+
+		//13*12*12 = 2028 if we count wires that connect existing circuits without adding an element
+		//18*17*16 = 4896 too low
 	}
 }
