@@ -15,6 +15,7 @@ constexpr long distsq(Pos a, Pos b) {
 	return dx * dx + dy * dy + dz * dz;
 }
 
+// TODO: optmize the size of this?
 template<size_t N>
 using DistanceMatrix = std::array<long, N * N>;
 
@@ -26,19 +27,6 @@ constexpr DistanceMatrix<N> create_matrix(std::array<Pos, N> const &pos) {
 		for (auto y = 0u; auto b : pos) {
 			long idx = x + N * y;
 			if (x < y) {
-				// printf("[%d] %d %d %d -> [%d] %d %d %d = [%ld] [%ld %ld] %ld\n",
-				// 	   x,
-				// 	   a.x,
-				// 	   a.y,
-				// 	   a.z,
-				// 	   y,
-				// 	   b.x,
-				// 	   b.y,
-				// 	   b.z,
-				// 	   idx,
-				// 	   idx % N,
-				// 	   idx / N,
-				// 	   distsq(a, b));
 				distances[idx] = distsq(a, b);
 			} else
 				distances[idx] = LONG_MAX;
@@ -80,24 +68,37 @@ constexpr std::array<int, N> group_boxes(int num_wires, DistanceMatrix<N> &dista
 
 	for (int i = 0; i < num_wires; i++) {
 		// printf("\nWire %d\n", i);
-		auto [a, b] = get_closest<N>(distances);
-		auto group_a = groups[a];
-		auto group_b = groups[b];
+		const auto [a, b] = get_closest<N>(distances);
+		const auto group_a = groups[a];
+		const auto group_b = groups[b];
+		bool one_group = true;
 		for (int j = 0; auto &g : groups) {
 			// move all boxes that are in b's groups, into a's group
 			if (g == group_b && g != group_a) {
 				// printf("Move [%d] from group %d to %d\n", j, group_b, group_a);
 				g = group_a;
 			}
+			if (g != groups[0])
+				one_group = false;
 			j++;
 		}
+
 		// print_groups(groups);
+
+		if (one_group) {
+			printf("One group formed by connecting [%d] and [%d]\n", a, b);
+			// hack: just return the indices
+			groups[0] = a;
+			groups[1] = b;
+			return groups;
+			break;
+		}
 	}
 	return groups;
 }
 
 template<size_t N>
-constexpr std::array<int, N> count_group_sizes(std::span<int> groups) {
+constexpr std::array<int, N> count_group_sizes(std::span<const int> groups) {
 	std::array<int, N> sizes{};
 	for (auto g : groups) {
 		sizes[g]++;
@@ -109,10 +110,19 @@ constexpr std::array<int, N> count_group_sizes(std::span<int> groups) {
 int main() {
 	{
 		auto matrix = create_matrix(sample_data);
-		auto groups = group_boxes<20>(10, matrix);
-		auto sizes = count_group_sizes<20>(groups);
+		const auto groups = group_boxes<20>(10, matrix);
+		const auto sizes = count_group_sizes<20>(groups);
 		std::cout << "Sample part 1: " << sizes[0] << " * " << sizes[1] << " * " << sizes[2] << " = "
 				  << (sizes[0] * sizes[1] * sizes[2]) << "\n";
+	}
+	{
+		auto matrix = create_matrix(sample_data);
+		const auto groups = group_boxes<20>(20 * 20 + 1, matrix);
+		auto a = groups[0];
+		auto b = groups[1];
+		auto a_x = sample_data[a].x;
+		auto b_x = sample_data[b].x;
+		printf("Sample part 2: [%d].x = %d, [%d].x = %d, prod = [%d]\n", a, a_x, b, b_x, a_x * b_x);
 	}
 	{
 		auto matrix = create_matrix(data);
@@ -122,6 +132,12 @@ int main() {
 				  << (sizes[0] * sizes[1] * sizes[2]) << "\n";
 	}
 	{
-		//18*17*16 = 4896 too low
+		auto matrix = create_matrix(data);
+		const auto groups = group_boxes<1000>(1000 * 1000 + 1, matrix);
+		auto a = groups[0];
+		auto b = groups[1];
+		auto a_x = data[a].x;
+		auto b_x = data[b].x;
+		printf("Part 2: [%d].x = %d, [%d].x = %d, prod = [%d]\n", a, a_x, b, b_x, a_x * b_x);
 	}
 }
