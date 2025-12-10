@@ -35,7 +35,7 @@ void print_map(std::span<const std::string_view> splitters, std::vector<std::vec
 // Brute-force line-by-line simulation:
 // We create an empty table same size as spitter map, with each cell is # of beam paths
 // Then we keep track of how many paths pass each point using that table.
-std::pair<int, BeamT> simulate(std::span<const std::string_view> splitters) {
+constexpr std::pair<int, BeamT> simulate(std::span<const std::string_view> splitters) {
 	int hits = 0;
 
 	std::vector<std::vector<BeamT>> beams;
@@ -72,6 +72,9 @@ std::pair<int, BeamT> simulate(std::span<const std::string_view> splitters) {
 	auto paths = std::accumulate(beams.back().begin(), beams.back().end(), BeamT{0});
 	return {hits, paths};
 }
+
+static_assert(simulate(sample_data) == std::pair<int, unsigned long long>{21, 40});
+static_assert(simulate(data) == std::pair<int, unsigned long long>{1640, 40999072541589});
 
 int main() {
 	{
